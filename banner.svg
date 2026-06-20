@@ -1,0 +1,87 @@
+<svg width="1280" viewBox="0 0 680 280" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="680" height="280" rx="12" fill="#f8f7f4"/>
+
+<defs>
+  <marker id="aG" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+    <path d="M0 0 L6 3 L0 6 Z" fill="#1D9E75"/>
+  </marker>
+  <marker id="aY" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+    <path d="M0 0 L6 3 L0 6 Z" fill="#D99A1C"/>
+  </marker>
+  <marker id="aM" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+    <path d="M0 0 L6 3 L0 6 Z" fill="#888780"/>
+  </marker>
+</defs>
+
+<!-- ── Proposer (the model) ─────────────────────────────── -->
+<g transform="translate(34, 86)">
+  <rect x="0" y="0" width="70" height="88" rx="6" fill="none" stroke="#c8c6c0" stroke-width="1.2"/>
+  <line x1="0" y1="16" x2="70" y2="16" stroke="#c8c6c0" stroke-width="0.8"/>
+  <circle cx="10" cy="8" r="2.3" fill="#d8d6d0"/>
+  <circle cx="18" cy="8" r="2.3" fill="#d8d6d0"/>
+  <circle cx="26" cy="8" r="2.3" fill="#d8d6d0"/>
+  <rect x="9"  y="28" width="44" height="7" rx="3" fill="#888780" opacity="0.32"/>
+  <rect x="9"  y="42" width="52" height="7" rx="3" fill="#378ADD" opacity="0.48"/>
+  <rect x="9"  y="56" width="36" height="7" rx="3" fill="#888780" opacity="0.32"/>
+  <text x="35" y="80" font-family="system-ui, -apple-system, sans-serif" font-size="8.5" fill="#aaa89e" text-anchor="middle">propose</text>
+</g>
+
+<!-- single proposed action → gate -->
+<line x1="104" y1="130" x2="131" y2="130" stroke="#888780" stroke-width="1.4" opacity="0.6" marker-end="url(#aM)"/>
+
+<!-- ── Classifier gate ──────────────────────────────────── -->
+<g transform="translate(136, 66)">
+  <rect x="0" y="0" width="20" height="128" rx="4" fill="none" stroke="#378ADD" stroke-width="1.8" opacity="0.7"/>
+  <!-- funnel glyph -->
+  <path d="M5 56 L15 56 L11 66 L11 74 L9 74 L9 66 Z" fill="#378ADD" opacity="0.6"/>
+  <text x="10" y="120" font-family="system-ui, -apple-system, sans-serif" font-size="8.5" fill="#378ADD" opacity="0.85" text-anchor="middle">classify</text>
+</g>
+
+<!-- ── Four tier lanes ──────────────────────────────────── -->
+<!-- GREEN: run -->
+<line x1="156" y1="84" x2="205" y2="84" stroke="#1D9E75" stroke-width="1.7" marker-end="url(#aG)"/>
+<g transform="translate(210, 74)">
+  <rect x="0" y="0" width="100" height="20" rx="5" fill="#1D9E75" opacity="0.13"/>
+  <rect x="0" y="0" width="100" height="20" rx="5" fill="none" stroke="#1D9E75" stroke-width="1" opacity="0.9"/>
+  <circle cx="13" cy="10" r="3.4" fill="#1D9E75"/>
+  <text x="24" y="13.5" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" font-weight="600" fill="#1D9E75">GREEN · run</text>
+</g>
+
+<!-- YELLOW: run + log -->
+<line x1="156" y1="114" x2="205" y2="114" stroke="#D99A1C" stroke-width="1.7" marker-end="url(#aY)"/>
+<g transform="translate(210, 104)">
+  <rect x="0" y="0" width="100" height="20" rx="5" fill="#D99A1C" opacity="0.13"/>
+  <rect x="0" y="0" width="100" height="20" rx="5" fill="none" stroke="#D99A1C" stroke-width="1" opacity="0.9"/>
+  <circle cx="13" cy="10" r="3.4" fill="#D99A1C"/>
+  <text x="24" y="13.5" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" font-weight="600" fill="#B07d12">YELLOW · log</text>
+</g>
+
+<!-- RED: hold -->
+<line x1="156" y1="144" x2="201" y2="144" stroke="#CC3340" stroke-width="1.7" opacity="0.85"/>
+<line x1="201" y1="138" x2="201" y2="150" stroke="#CC3340" stroke-width="2.2"/>
+<g transform="translate(210, 134)">
+  <rect x="0" y="0" width="100" height="20" rx="5" fill="none" stroke="#CC3340" stroke-width="1" opacity="0.85"/>
+  <rect x="9" y="6" width="2.4" height="8" rx="1" fill="#CC3340"/>
+  <rect x="14" y="6" width="2.4" height="8" rx="1" fill="#CC3340"/>
+  <text x="24" y="13.5" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" font-weight="600" fill="#CC3340">RED · hold</text>
+</g>
+
+<!-- BLACK: block -->
+<line x1="156" y1="174" x2="201" y2="174" stroke="#3a3a37" stroke-width="1.7" opacity="0.8"/>
+<g transform="translate(210, 164)">
+  <rect x="0" y="0" width="100" height="20" rx="5" fill="none" stroke="#3a3a37" stroke-width="1" opacity="0.8"/>
+  <path d="M8 6 L15 13 M15 6 L8 13" stroke="#3a3a37" stroke-width="1.6" stroke-linecap="round"/>
+  <text x="24" y="13.5" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" font-weight="600" fill="#3a3a37">BLACK · block</text>
+</g>
+
+<!-- ── Typography ───────────────────────────────────────── -->
+<text x="338" y="108" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="500" fill="#2c2c2a" letter-spacing="-1">hackle</text>
+<text x="339" y="143" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="400" fill="#5f5e5a">trust-tier-gated executor</text>
+<text x="339" y="180" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="400" fill="#888780">the model proposes one action at a time</text>
+<text x="339" y="196" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="400" fill="#888780">deterministic rules decide what is allowed to run</text>
+<text x="339" y="214" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="400" fill="#aaa89e">propose · classify · enforce · observe</text>
+
+<rect x="339" y="223" width="56" height="22" rx="4" fill="#f1efe8" stroke="#d3d1c7" stroke-width="0.5"/>
+<text x="367" y="238" font-family="monospace" font-size="10" font-weight="400" fill="#888780" text-anchor="middle">goweft</text>
+
+</svg>

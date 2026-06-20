@@ -1,0 +1,100 @@
+<svg width="960" viewBox="0 0 960 440" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+<rect x="0" y="0" width="960" height="440" rx="12" fill="#f8f7f4"/>
+
+<defs>
+  <marker id="a" markerWidth="8" markerHeight="8" refX="5.5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#888780"/></marker>
+  <marker id="ag" markerWidth="8" markerHeight="8" refX="5.5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#1D9E75"/></marker>
+  <marker id="ay" markerWidth="8" markerHeight="8" refX="5.5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#D99A1C"/></marker>
+  <marker id="ar" markerWidth="8" markerHeight="8" refX="5.5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#CC3340"/></marker>
+  <marker id="ak" markerWidth="8" markerHeight="8" refX="5.5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 Z" fill="#3a3a37"/></marker>
+</defs>
+
+<text x="32" y="40" font-size="15" font-weight="600" fill="#2c2c2a">How hackle runs a task</text>
+
+<!-- task -->
+<rect x="32" y="92" width="74" height="40" rx="20" fill="#f1efe8" stroke="#c8c6c0" stroke-width="1.2"/>
+<text x="69" y="117" font-size="12" fill="#5f5e5a" text-anchor="middle">task</text>
+<line x1="106" y1="112" x2="134" y2="112" stroke="#888780" stroke-width="1.4" marker-end="url(#a)"/>
+
+<!-- plan -->
+<rect x="136" y="88" width="96" height="48" rx="8" fill="#fff" stroke="#c8c6c0" stroke-width="1.2"/>
+<text x="184" y="108" font-size="12.5" font-weight="600" fill="#2c2c2a" text-anchor="middle">plan</text>
+<text x="184" y="124" font-size="9.5" fill="#888780" text-anchor="middle">ordered steps</text>
+
+<!-- loop container -->
+<rect x="262" y="60" width="430" height="330" rx="12" fill="none" stroke="#c8c6c0" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="278" y="80" font-size="10.5" fill="#aaa89e">executor loop · one action per turn · max 30 steps</text>
+
+<line x1="232" y1="112" x2="288" y2="112" stroke="#888780" stroke-width="1.4" marker-end="url(#a)"/>
+
+<!-- propose -->
+<rect x="288" y="88" width="104" height="48" rx="8" fill="#fff" stroke="#378ADD" stroke-width="1.3"/>
+<text x="340" y="108" font-size="12.5" font-weight="600" fill="#2c2c2a" text-anchor="middle">propose</text>
+<text x="340" y="124" font-size="9.5" fill="#888780" text-anchor="middle">1 action · JSON</text>
+
+<line x1="392" y1="112" x2="420" y2="112" stroke="#888780" stroke-width="1.4" marker-end="url(#a)"/>
+
+<!-- classify -->
+<rect x="420" y="88" width="104" height="48" rx="8" fill="#fff" stroke="#378ADD" stroke-width="1.3"/>
+<text x="472" y="108" font-size="12.5" font-weight="600" fill="#2c2c2a" text-anchor="middle">classify</text>
+<text x="472" y="124" font-size="9.5" fill="#888780" text-anchor="middle">by tool + args</text>
+
+<!-- tier fan from classify -->
+<path d="M524 112 C545 112 545 150 566 150" fill="none" stroke="#1D9E75" stroke-width="1.6" marker-end="url(#ag)"/>
+<path d="M524 112 C545 112 545 192 566 192" fill="none" stroke="#D99A1C" stroke-width="1.6" marker-end="url(#ay)"/>
+<path d="M524 112 C545 112 545 268 566 268" fill="none" stroke="#CC3340" stroke-width="1.6" marker-end="url(#ar)"/>
+<path d="M524 112 C545 112 545 312 566 312" fill="none" stroke="#3a3a37" stroke-width="1.6" marker-end="url(#ak)"/>
+
+<!-- GREEN -->
+<rect x="568" y="135" width="108" height="30" rx="6" fill="#1D9E75" opacity="0.12"/>
+<rect x="568" y="135" width="108" height="30" rx="6" fill="none" stroke="#1D9E75" stroke-width="1.1"/>
+<text x="578" y="154" font-size="10.5" font-weight="700" fill="#1D9E75">GREEN</text>
+<text x="624" y="154" font-size="10" fill="#5f5e5a">execute</text>
+
+<!-- YELLOW -->
+<rect x="568" y="177" width="108" height="30" rx="6" fill="#D99A1C" opacity="0.12"/>
+<rect x="568" y="177" width="108" height="30" rx="6" fill="none" stroke="#D99A1C" stroke-width="1.1"/>
+<text x="578" y="196" font-size="10.5" font-weight="700" fill="#B07d12">YELLOW</text>
+<text x="638" y="196" font-size="10" fill="#5f5e5a">run+log</text>
+
+<!-- RED -->
+<rect x="568" y="253" width="108" height="30" rx="6" fill="none" stroke="#CC3340" stroke-width="1.1"/>
+<text x="578" y="272" font-size="10.5" font-weight="700" fill="#CC3340">RED</text>
+<text x="608" y="272" font-size="10" fill="#5f5e5a">hold · human</text>
+
+<!-- BLACK -->
+<rect x="568" y="297" width="108" height="30" rx="6" fill="none" stroke="#3a3a37" stroke-width="1.1"/>
+<text x="578" y="316" font-size="10.5" font-weight="700" fill="#3a3a37">BLACK</text>
+<text x="624" y="316" font-size="10" fill="#5f5e5a">blocked</text>
+
+<!-- execute → observe → loop back -->
+<line x1="676" y1="150" x2="724" y2="150" stroke="#1D9E75" stroke-width="1.5" marker-end="url(#ag)"/>
+<line x1="676" y1="192" x2="724" y2="166" stroke="#D99A1C" stroke-width="1.5" marker-end="url(#ay)"/>
+<rect x="726" y="135" width="86" height="40" rx="8" fill="#fff" stroke="#1D9E75" stroke-width="1.2"/>
+<text x="769" y="153" font-size="11" font-weight="600" fill="#2c2c2a" text-anchor="middle">observe</text>
+<text x="769" y="167" font-size="9" fill="#888780" text-anchor="middle">result → history</text>
+
+<!-- loop back arrow: observe down and around to propose -->
+<path d="M769 175 C769 235 769 360 340 360 L340 138" fill="none" stroke="#888780" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#a)"/>
+<text x="540" y="375" font-size="9.5" fill="#aaa89e" text-anchor="middle">next turn</text>
+
+<!-- done (model emits done) -->
+<path d="M340 88 C340 56 600 50 820 56" fill="none" stroke="#1D9E75" stroke-width="1.3" marker-end="url(#ag)"/>
+<text x="600" y="45" font-size="9.5" fill="#1D9E75" text-anchor="middle">model signals done</text>
+<rect x="824" y="40" width="104" height="36" rx="18" fill="#1D9E75" opacity="0.14"/>
+<rect x="824" y="40" width="104" height="36" rx="18" fill="none" stroke="#1D9E75" stroke-width="1.2"/>
+<text x="876" y="62" font-size="12" font-weight="600" fill="#177a5b" text-anchor="middle">done</text>
+
+<!-- RED exit -->
+<line x1="676" y1="268" x2="822" y2="268" stroke="#CC3340" stroke-width="1.4" marker-end="url(#ar)"/>
+<rect x="824" y="252" width="104" height="32" rx="8" fill="none" stroke="#CC3340" stroke-width="1.2"/>
+<text x="876" y="272" font-size="11" font-weight="600" fill="#CC3340" text-anchor="middle">held</text>
+
+<!-- BLACK note -->
+<line x1="676" y1="312" x2="822" y2="312" stroke="#3a3a37" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#ak)"/>
+<text x="824" y="316" font-size="9.5" fill="#888780">logged · 3× → abort</text>
+
+<!-- audit footer -->
+<rect x="262" y="402" width="666" height="26" rx="6" fill="#f1efe8" stroke="#d3d1c7" stroke-width="0.8"/>
+<text x="595" y="419" font-size="10.5" fill="#888780" text-anchor="middle">every proposal, decision, and hold → hash-chained, tamper-evident audit log</text>
+</svg>

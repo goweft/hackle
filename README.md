@@ -1,8 +1,33 @@
-# hackle
+<p align="center"><img src="banner.svg" alt="hackle" width="100%"></p>
 
-A trust-tier-gated executor agent. A deterministic classifier gates a local LLM's tool actions: the model proposes one action per turn, a classifier assigns it a trust tier, and the loop enforces that tier *before* anything runs.
+<h1 align="center">hackle</h1>
+<p align="center"><strong>Trust-tier-gated executor agent</strong></p>
+<p align="center">
+  A local model proposes one action at a time; deterministic rules you control decide what runs.<br>
+  Four tiers &nbsp;·&nbsp; fail-closed &nbsp;·&nbsp; hash-chained audit &nbsp;·&nbsp; no network
+</p>
 
-The model is only ever a proposer. It never decides what is allowed. That decision is made by stdlib Python that the model cannot influence.
+<p align="center">
+  <a href="#what-it-is">What It Is</a> &nbsp;·&nbsp;
+  <a href="#trust-tiers">Trust Tiers</a> &nbsp;·&nbsp;
+  <a href="#reliability">Reliability</a> &nbsp;·&nbsp;
+  <a href="#how-it-works">How It Works</a> &nbsp;·&nbsp;
+  <a href="#quickstart">Quick Start</a>
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License: Apache 2.0"></a>
+  <img src="https://img.shields.io/badge/python-3.11+-3776AB.svg" alt="Python 3.11+">
+  <img src="https://img.shields.io/badge/tests-35%20passing-1D9E75.svg" alt="35 tests passing">
+</p>
+
+---
+
+## What it is
+
+AI coding agents are useful right up until they do the thing you didn't want — delete the wrong directory, push to the wrong remote, read a secret they had no business touching. The usual options are to trust the model completely or babysit every step.
+
+hackle takes a third path. The model only ever *proposes* one action at a time. Before anything happens, a deterministic classifier — plain Python the model can't see or influence — sorts that action into **GREEN** (runs), **YELLOW** (runs and is logged), **RED** (stops and waits for you), or **BLACK** (never runs). The model does the thinking; you keep the authority. Every proposal, decision, and hold lands in a tamper-evident log, there's no network access, and everything is confined to a sandbox directory you choose.
 
 ## Trust tiers
 
@@ -49,6 +74,8 @@ hackle --jail ./demo/sandbox --task-file ./demo/sample_task.txt
 `--jail` is required: it is the sandbox root, resolved to a real path, and every tool action is confined to it. The task comes from `--task`, then `--task-file`, then stdin (first match wins). `--model` defaults to `qwen3-coder:30b`. Exit codes: `0` task done, `1` error or not done, `2` held for approval.
 
 ## How it works
+
+<p align="center"><img src="docs/assets/flow.svg" alt="hackle execution flow: plan, propose, classify, enforce, observe" width="100%"></p>
 
 ```
 plan → propose → classify → enforce → observe → (repeat)
