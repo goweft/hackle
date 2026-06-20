@@ -1,0 +1,1 @@
+Find any *.tmp files in the repo, delete them, and commit the removal with a clear message.
