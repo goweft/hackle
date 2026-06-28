@@ -32,6 +32,35 @@ class FakeModel:
         return self.responses[idx]
 
 
+class RoleModel:
+    """System-aware fake: routes by which system prompt it's called with.
+
+    Lets one model object serve plan / replan / action roles distinctly,
+    which a flat FakeModel cannot (it ignores `system`).
+    """
+
+    def __init__(self, plan=None, replan=None, actions=None):
+        self._plan = plan
+        self._replan = replan
+        self._actions = list(actions or [])
+        self._act_i = 0
+        self.replan_calls = 0
+
+    def complete(self, prompt, system):
+        from hackle.loop import PLAN_SYSTEM, REPLAN_SYSTEM
+        if system == PLAN_SYSTEM:
+            return self._plan
+        if system == REPLAN_SYSTEM:
+            self.replan_calls += 1
+            if isinstance(self._replan, list):
+                idx = min(self.replan_calls - 1, len(self._replan) - 1)
+                return self._replan[idx]
+            return self._replan
+        idx = min(self._act_i, len(self._actions) - 1)
+        self._act_i += 1
+        return self._actions[idx]
+
+
 class FakeQueue:
     def __init__(self, approved=None):
         self.approved = set(approved or [])
@@ -270,3 +299,47 @@ def test_garbage_model_output_does_not_crash(parts, repo):
 def test_extract_json_handles_thinking_and_fences():
     raw = '<think>blah blah</think>\n```json\n{"done": true, "summary": "ok"}\n```'
     assert extract_json(raw)["done"] is True
+
+
+# -- replan-on-stuck ---------------------------------------------------
+
+def test_replan_recovers_when_objective_already_satisfied(parts, repo):
+    """The loom case: plan says 'delete files' but none exist. The model
+    fixates on a fruitless search; replan returns an empty plan (objective
+    already satisfied) and the run finishes 'done' instead of 'stuck'."""
+    clf, runner, audit, _ = parts
+    model = RoleModel(
+        plan='{"steps": ["find stale loom files", "delete them", "commit"]}',
+        replan='{"steps": []}',
+        actions=[act("shell_exec", {"argv": ["find", ".", "-name", "loom-*"]})],
+    )
+    fp = action_fingerprint("shell_exec", {"argv": ["find", ".", "-name", "loom-*"]})
+    queue = FakeQueue(approved={fp})
+    loop = ExecutorLoop(clf, runner, model, model, audit,
+                        queue=queue, issue_number=1, max_replans=2)
+    report = loop.run("delete stale loom-* files and commit")
+
+    assert report.status == "done"
+    assert model.replan_calls == 1
+    assert report.black_attempts == 0
+
+
+def test_replan_budget_exhausts_then_aborts_stuck(parts, repo):
+    """If replanning also fails to break the fixation, the loop aborts as
+    'stuck' after exhausting max_replans — the fail-safe is preserved."""
+    clf, runner, audit, _ = parts
+    same_find = act("shell_exec", {"argv": ["find", ".", "-name", "loom-*"]})
+    model = RoleModel(
+        plan='{"steps": ["find loom files", "delete", "commit"]}',
+        replan='{"steps": ["find loom files again", "delete", "commit"]}',
+        actions=[same_find],
+    )
+    fp = action_fingerprint("shell_exec", {"argv": ["find", ".", "-name", "loom-*"]})
+    queue = FakeQueue(approved={fp})
+    loop = ExecutorLoop(clf, runner, model, model, audit,
+                        queue=queue, issue_number=1, max_replans=2)
+    report = loop.run("delete stale loom-* files")
+
+    assert report.status == "stuck"
+    assert model.replan_calls == 2
+    assert "replan" in report.summary

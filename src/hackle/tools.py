@@ -144,7 +144,19 @@ class ToolRunner:
         return result
 
     def shell_exec(self, params: dict) -> ToolResult:
-        return self._run(list(params["argv"]))
+        argv = list(params["argv"])
+        result = self._run(argv)
+        # Empty stdout reads as "nothing happened" to the model, which then
+        # repeats the command (and starves the replanner of signal). Make a
+        # zero-output success explicit and name the command, so a `find` that
+        # matched nothing reports that fact instead of a blank line.
+        if result.ok and not result.output.strip():
+            binary = os.path.basename(argv[0]) if argv else "command"
+            return ToolResult(
+                True,
+                f"({binary} succeeded with no output - 0 results / nothing matched)",
+            )
+        return result
 
     def execute(self, tool: str, params: dict) -> ToolResult:
         handler = {

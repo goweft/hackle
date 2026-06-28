@@ -29,6 +29,18 @@ PLAN_SYSTEM = (
     'object: {"steps": ["...", "..."]}. 3-8 steps. No prose.'
 )
 
+REPLAN_SYSTEM = (
+    "You are the planning model for a constrained executor agent. An earlier "
+    "plan stalled: the agent repeated an action without making progress, which "
+    "usually means the plan did not match what the repository actually contains. "
+    "You are given the original task and the history of what actually happened. "
+    "Produce a REVISED ordered plan that accounts for that history. If the history "
+    "shows the objective is already satisfied (for example a search found nothing "
+    "to act on, or the change is already committed), return an EMPTY plan: "
+    '{"steps": []} — the agent will then verify and finish. Respond with ONLY a '
+    'JSON object: {"steps": ["...", "..."]}. 0-8 steps. No prose.'
+)
+
 ACT_SYSTEM = (
     "You are a constrained executor agent working inside a git repository. "
     "Available tools:\n"
@@ -149,6 +161,7 @@ class ExecutorLoop:
         queue: Any = None,         # GiteaQueue | None (None = no approval channel)
         issue_number: int | None = None,
         max_black: int = 3,
+        max_replans: int = 2,
     ):
         self.classifier = classifier
         self.runner = runner
@@ -158,6 +171,7 @@ class ExecutorLoop:
         self.queue = queue
         self.issue_number = issue_number
         self.max_black = max_black
+        self.max_replans = max_replans
 
     # -- planning ------------------------------------------------------
 
@@ -166,6 +180,23 @@ class ExecutorLoop:
         steps = extract_json(raw).get("steps", [])
         if not isinstance(steps, list) or not steps:
             raise ValueError("planner returned no steps")
+        return [str(s) for s in steps]
+
+    def replan(self, task_text: str, history: list[str]) -> list[str]:
+        """Revise the plan after a stall, given what actually happened.
+
+        An empty list is a valid, meaningful result: it means the objective
+        is already satisfied and the agent should verify and finish.
+        """
+        hist = "\n".join(history[-20:]) if history else "(none)"
+        raw = self.plan_model.complete(
+            f"Original task:\n{task_text}\n\nWhat happened so far:\n{hist}\n\n"
+            "Revised plan?",
+            REPLAN_SYSTEM,
+        )
+        steps = extract_json(raw).get("steps", [])
+        if not isinstance(steps, list):
+            return []
         return [str(s) for s in steps]
 
     # -- approval ------------------------------------------------------
@@ -183,6 +214,7 @@ class ExecutorLoop:
         report = RunReport(status="max_steps")
         history: list[str] = []
         recent_sigs: list[str] = []  # loop-guard against stuck repeats
+        replans_used = 0
 
         for _ in range(MAX_STEPS):
             prompt = (
@@ -243,8 +275,30 @@ class ExecutorLoop:
             sig = json.dumps({"tool": tool, "params": params}, sort_keys=True)
             recent_sigs.append(sig)
             if recent_sigs[-3:].count(sig) >= 3:
+                # Stall = the current plan no longer matches reality.
+                # Replan from what actually happened before giving up.
+                if replans_used < self.max_replans:
+                    replans_used += 1
+                    history.append(
+                        f"[replan {replans_used}/{self.max_replans}] stalled repeating {tool}; revising plan"
+                    )
+                    new_plan = self.replan(task_text, history)
+                    recent_sigs.clear()  # fresh stall-detection window
+                    if not new_plan:
+                        # Empty revised plan = objective already satisfied.
+                        report.status = "done"
+                        report.summary = (
+                            "replan determined the objective is already "
+                            "satisfied; nothing left to do"
+                        )
+                        break
+                    plan_steps = new_plan
+                    continue
                 report.status = "stuck"
-                report.summary = f"aborted: repeated identical action 3x: {tool}"
+                report.summary = (
+                    f"aborted: repeated identical action 3x after "
+                    f"{replans_used} replan(s): {tool}"
+                )
                 break
             result = self.runner.execute(tool, params)
             rec = StepRecord(tool, params, decision.tier.name, "executed",
