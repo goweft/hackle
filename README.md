@@ -59,6 +59,8 @@ Measured with the included harness against a live `qwen3-coder:30b`, four tasks 
 
 12/12 done-rate, 12/12 commit-rate: every run completed the intended change *and* landed it in a commit. Reproduce with `python scripts/reliability.py --arms structural --runs 3` (needs a running Ollama at `localhost:11434`). The harness also ships a `manual` baseline arm to A/B the autostage fix.
 
+Stalls get a structural answer too. When the loop stops making progress, hackle replans from its execution history instead of aborting — the model gets a fresh plan informed by what actually happened, capped at two replans per run so a confused model can't spin forever. And a shell command that succeeds with no output is reported as an explicit empty success rather than silence, so the model never mistakes a quiet win for a failure. Both behaviors are covered by the test suite.
+
 ## Quickstart
 
 ```bash
