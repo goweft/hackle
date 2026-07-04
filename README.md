@@ -18,7 +18,7 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License: Apache 2.0"></a>
   <img src="https://img.shields.io/badge/python-3.11+-3776AB.svg" alt="Python 3.11+">
-  <img src="https://img.shields.io/badge/tests-35%20passing-1D9E75.svg" alt="35 tests passing">
+  <img src="https://img.shields.io/badge/tests-37%20passing-1D9E75.svg" alt="37 tests passing">
 </p>
 
 ---
