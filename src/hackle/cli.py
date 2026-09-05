@@ -73,7 +73,9 @@ def _read_task(args) -> str:
 def build_loop(jail: str, model: str, audit_dir: str, dry_run: bool) -> ExecutorLoop:
     classifier = ActionClassifier(
         jail_root=jail,
-        deny_globs=[".env*", "*.pem", "*.key", ".ssh/**", "credentials*", ".git/**"],
+        deny_globs=[".env*", "*.pem", "*.key", "*.p12", "*.pfx", ".ssh/**",
+                    "id_rsa*", "id_ed25519*", "id_ecdsa*", "id_dsa*",
+                    "credentials*", "secrets.*", ".git/**"],
         git_allowlist=["status", "diff", "log", "add", "commit", "branch",
                        "checkout -b", "stash"],
         shell_allowlist=["python", "pytest", "go", "make", "grep", "ls", "find"],

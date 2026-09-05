@@ -9,6 +9,13 @@ Design rules (executor agent spec, agents/executor.yaml):
 - Deny beats allow: deny lists are checked before allowlists.
 - Transitive: a chain of actions takes the worst tier anywhere in it.
 - Symlinks resolve before jail checks.
+- Deny globs are greedy: matched case-insensitively and at any depth
+  (a pattern that names a file or directory catches it anywhere in the
+  jail). Over-matching a deny glob costs a human hold; under-matching
+  costs a leaked key.
+- git global options are refused before the subcommand is read: `-c`,
+  `-C`, `--exec-path`, `--git-dir`, `--work-tree`, ... can turn an
+  allowlisted read into arbitrary execution.
 
 Distinct from sandbox_policy.TierPolicy (numeric trust tiers = resource
 budgets per agent). This module classifies *actions*; that one budgets
@@ -58,14 +65,26 @@ def worst(*decisions: Decision) -> Decision:
 _GIT_NETWORK = {"push", "pull", "fetch", "remote", "clone", "submodule"}
 # Destructive history operations: not network, still forbidden.
 _GIT_DESTRUCTIVE = {"clean", "filter-branch", "reflog"}
+# Subcommands that never mutate the tree or history. Allowlisted members
+# classify GREEN: the tier reflects what the operation does, not which
+# binary runs. Anything else on the allowlist stays YELLOW.
+_GIT_READONLY = {"status", "diff", "log", "show"}
+# Global options (those before the subcommand) that are known inert.
+# Every other pre-subcommand option is refused: `-c core.pager=CMD log`
+# and `--exec-path=DIR` turn an allowlisted read into arbitrary exec, and
+# `-C`/`--git-dir`/`--work-tree` repoint the jail. Unknown ⇒ BLACK.
+_GIT_SAFE_GLOBAL_OPTS = {"--no-pager", "--no-optional-locks",
+                         "--literal-pathspecs"}
 
 
 class ActionClassifier:
     """Classifies tool invocations against the executor policy.
 
-    Parameters mirror the ``tools:`` block of an agent YAML. Globs are
-    matched against paths relative to the jail root after symlink
-    resolution.
+    Parameters mirror the ``tools:`` block of an agent YAML. Deny globs
+    are matched against the path relative to the jail root after symlink
+    resolution — case-insensitively, and against every trailing
+    sub-path, so ``.git/**`` also catches ``submodule/.git/config`` and
+    ``*.pem`` catches ``SECRET.PEM``.
     """
 
     def __init__(
@@ -120,13 +139,28 @@ class ActionClassifier:
                 ActionTier.BLACK, tool, f"path escapes jail: {raw_path} -> {resolved}"
             )
         rel = os.path.relpath(resolved, self.jail_root)
+        pattern = self._deny_match(rel)
+        if pattern is not None:
+            return Decision(
+                ActionTier.BLACK, tool, f"path matches deny glob '{pattern}': {rel}"
+            )
+        return None
+
+    def _deny_match(self, rel: str) -> str | None:
+        """Return the first deny glob that matches ``rel``, or None.
+
+        Greedy on purpose. A pattern is tried against the full relative
+        path and every trailing sub-path (``a/b/c`` → ``a/b/c``,
+        ``b/c``, ``c``), all lower-cased, so ``.ssh/**`` matches a nested
+        ``.ssh/`` and ``*.pem`` matches ``.PEM``. Deny beats allow: there
+        is no allow-glob to override this.
+        """
+        parts = rel.replace(os.sep, "/").split("/")
+        candidates = ["/".join(parts[i:]).lower() for i in range(len(parts))]
         for pattern in self.deny_globs:
-            if fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(
-                os.path.basename(rel), pattern
-            ):
-                return Decision(
-                    ActionTier.BLACK, tool, f"path matches deny glob '{pattern}': {rel}"
-                )
+            pat = pattern.lower()
+            if any(fnmatch.fnmatchcase(c, pat) for c in candidates):
+                return pattern
         return None
 
     # -- per-tool handlers --------------------------------------------
@@ -159,7 +193,20 @@ class ActionClassifier:
 
     def _classify_git(self, params: dict[str, Any]) -> Decision:
         argv = list(params.get("argv") or [])
-        sub = next((a for a in argv if not a.startswith("-")), None)
+        # Global options precede the subcommand. Only a short inert set is
+        # tolerated; anything else (-c, -C, --exec-path=..., --git-dir=...)
+        # can change what an allowlisted subcommand executes, so refuse it
+        # before even looking at the subcommand.
+        sub = None
+        for a in argv:
+            if not a.startswith("-"):
+                sub = a
+                break
+            if a not in _GIT_SAFE_GLOBAL_OPTS:
+                return Decision(
+                    ActionTier.BLACK, "git_ops",
+                    f"git global option '{a}' may alter execution: fail closed",
+                )
         if sub is None:
             return Decision(ActionTier.BLACK, "git_ops", "no subcommand: fail closed")
         if sub in _GIT_NETWORK:
@@ -168,11 +215,21 @@ class ActionClassifier:
             )
         if sub in _GIT_DESTRUCTIVE:
             return Decision(ActionTier.BLACK, "git_ops", f"git {sub} is destructive")
+        # diff/log/show take --output=<file>, which writes anywhere on the
+        # filesystem. A "read-only" op must not carry a write side channel.
+        if any(a == "--output" or a.startswith("--output=") for a in argv):
+            return Decision(
+                ActionTier.BLACK, "git_ops", "--output writes outside the jailed tools: fail closed"
+            )
         if sub == "reset" and "--hard" in argv:
             return Decision(ActionTier.BLACK, "git_ops", "git reset --hard discards work")
         for entry in self.git_allowlist:
             tokens = entry.split()
             if tokens[0] == sub and all(t in argv for t in tokens[1:]):
+                if sub in _GIT_READONLY:
+                    return Decision(
+                        ActionTier.GREEN, "git_ops", f"allowlisted read-only: git {entry}"
+                    )
                 return Decision(
                     ActionTier.YELLOW, "git_ops", f"allowlisted: git {entry}"
                 )

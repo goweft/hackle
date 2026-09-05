@@ -7,7 +7,7 @@ from hackle.llm import LLMClient
 from hackle.loop import ExecutorLoop, OllamaLoopModel, RunReport, StepRecord
 from hackle.tools import ToolRunner, ToolResult
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __all__ = [
     "ActionClassifier",
     "ActionTier",

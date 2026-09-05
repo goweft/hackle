@@ -51,6 +51,30 @@ def test_git_flags_do_not_hide_subcommand(clf):
     assert d.tier is ActionTier.BLACK
 
 
+def test_git_readonly_subcommands_are_green(clf):
+    for sub in ("status", "diff", "log"):
+        d = clf.classify("git_ops", {"argv": [sub]})
+        assert d.tier is ActionTier.GREEN, sub
+    # add is allowlisted but mutates the index: stays YELLOW
+    assert clf.classify("git_ops", {"argv": ["add", "."]}).tier is ActionTier.YELLOW
+
+
+def test_git_global_config_option_is_black_before_subcommand(clf):
+    pager = clf.classify("git_ops", {"argv": ["-c", "core.pager=sh -c id", "log"]})
+    assert pager.tier is ActionTier.BLACK
+    assert "global option" in pager.reason
+    for argv in (["--exec-path=/tmp/evil", "status"],
+                 ["-C", "/tmp", "log"],
+                 ["--git-dir=/tmp/x", "status"]):
+        assert clf.classify("git_ops", {"argv": argv}).tier is ActionTier.BLACK, argv
+    # a read-only subcommand must not smuggle a file write via --output
+    assert clf.classify("git_ops", {"argv": ["log", "--output=/tmp/x"]}).tier is ActionTier.BLACK
+    assert clf.classify("git_ops", {"argv": ["diff", "--output", "/tmp/x"]}).tier is ActionTier.BLACK
+    # inert global options are tolerated; post-subcommand -c is a commit flag
+    assert clf.classify("git_ops", {"argv": ["--no-pager", "log"]}).tier is ActionTier.GREEN
+    assert clf.classify("git_ops", {"argv": ["commit", "-c", "HEAD"]}).tier is ActionTier.YELLOW
+
+
 def test_git_reset_hard_black_but_plain_reset_not_allowlisted(clf):
     hard = clf.classify("git_ops", {"argv": ["reset", "--hard", "HEAD~1"]})
     plain = clf.classify("git_ops", {"argv": ["reset", "HEAD~1"]})
@@ -126,6 +150,17 @@ def test_symlink_escape_black(clf, jail, tmp_path):
     link = os.path.join(jail, "innocent.txt")
     os.symlink(str(secret), link)
     assert clf.classify("read_file", {"path": link}).tier is ActionTier.BLACK
+
+
+def test_deny_globs_are_case_insensitive_and_any_depth(clf, jail):
+    for rel in ("SECRET.PEM", "sub/dir/server.Key", "vendor/.git/config",
+                "config/.ENV.local", "a/b/credentials.json"):
+        d = clf.classify("read_file", {"path": rel})
+        assert d.tier is ActionTier.BLACK, rel
+        assert "deny glob" in d.reason, rel
+    # greedy, but not sloppy: ordinary names still read GREEN
+    for rel in ("environment.py", "keys.md", "gitlog.txt", "src/main.py"):
+        assert clf.classify("read_file", {"path": rel}).tier is ActionTier.GREEN, rel
 
 
 def test_env_deny_glob_black_even_inside_jail(clf, jail):

@@ -18,7 +18,7 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License: Apache 2.0"></a>
   <img src="https://img.shields.io/badge/python-3.11+-3776AB.svg" alt="Python 3.11+">
-  <img src="https://img.shields.io/badge/tests-37%20passing-1D9E75.svg" alt="37 tests passing">
+  <img src="https://img.shields.io/badge/tests-80%20passing-1D9E75.svg" alt="80 tests passing">
 </p>
 
 ---
@@ -40,7 +40,9 @@ Every proposed action is classified into one of four tiers. The tier is decided 
 | RED    | Needs a human                            | Held — raises `EscalationHold`; the run stops and reports the held action |
 | BLACK  | Disallowed                               | Never runs                                          |
 
-The classifier is constructed with a jail root, a deny-glob list (`.env*`, `*.pem`, `*.key`, `.ssh/**`, `credentials*`, `.git/**`), a git subcommand allowlist, and a shell allowlist/denylist. Anything it can't classify fails closed.
+The classifier is constructed with a jail root, a deny-glob list (`.env*`, `*.pem`, `*.key`, `*.p12`, `*.pfx`, `.ssh/**`, `id_rsa*`, `id_ed25519*`, `id_ecdsa*`, `id_dsa*`, `credentials*`, `secrets.*`, `.git/**`), a git subcommand allowlist, and a shell allowlist/denylist. Anything it can't classify fails closed.
+
+Deny globs are greedy: matched case-insensitively and at any depth, so `.git/**` also catches `submodule/.git/config` and `*.pem` catches `SECRET.PEM`. Over-matching a deny glob costs a human hold; under-matching costs a leaked key. Read-only git subcommands (`status`, `diff`, `log`, `show`) classify GREEN when allowlisted; everything else on the allowlist is YELLOW. Git global options before the subcommand (`-c`, `-C`, `--exec-path`, `--git-dir`, ...) are refused outright, because `-c core.pager=CMD log` would turn an allowlisted read into arbitrary execution.
 
 ## Reliability
 
